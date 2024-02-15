@@ -1,0 +1,14 @@
+name = "Troubadour"
+uuid = "4da8f720-f50b-4b59-95d9-7b314520e0f4"
+authors = ["JuliaWTF"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.6"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Test"]
