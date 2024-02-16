@@ -44,7 +44,7 @@ end
 function create_midi(llvm::AbstractString)
     codes = get_instruction_codes(llvm)
     notes  = map(enumerate(codes)) do (i, code)
-        ΔT = 50
+        ΔT = floor(Int64, 200 * rand() + 20)
         pitch = Int64(hash(code) % 128)
         velocity = 100
         Note(pitch, velocity, ΔT * (i -1), ΔT)
@@ -75,25 +75,17 @@ function play_code(fn, types)
 end
 
 function get_llvm_string(fn, types)
-    InteractiveUtils._dump_function(
-        fn,
-        types,
-        false,
-        false,
-        false,
-        false,
-        :intel,
-        true,
-        :default,
-        false,
-    )
+    io = IOBuffer()
+    code_llvm(io, fn, types; raw = false, dump_module = false, optimize = true, debuginfo = :none)
+    String(take!(io))
 end
 
 const INSTRUCTION_RE = r"\s=\s([a-z]+)\s"
 
 function get_instruction_codes(llvm_string::String)
     lines = split(llvm_string, "\n")
-    instructions = [strip(x) for x in lines if startswith(x, "  ")]
+    # Only keep instructions (start with "  ") and strip whitespaces
+    instructions = [strip(x) for x in lines if startswith(x, "  ")]  
     matches = [match(INSTRUCTION_RE, instruction) for instruction in instructions]
     codes = [match.captures[1] for match in matches if !isnothing(match)]
     codes
