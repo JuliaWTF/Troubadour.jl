@@ -1,8 +1,9 @@
 module Troubadour
 using ProgressMeter
 using InteractiveUtils
+using MIDI
 
-export play_code, @play
+export play_code, @play, play_midi, @play_midi
 
 "Plays the LLVM of an expression with Cs"
 macro play(ex)
@@ -18,6 +19,49 @@ macro play(ex)
             $(ex)
         end,
     )
+end
+
+macro play_midi(ex)
+    @assert ex.head == :call
+    
+    fn = first(ex.args)
+    args = Base.tail(Tuple(ex.args))
+    esc(
+        quote
+            @async play_midi(
+                $(Core.eval(__module__, fn)),
+                $(typeof.(Core.eval.(Ref(__module__), args))),
+            )
+            $(ex)
+        end,
+    )
+end
+
+function play_synth(file)
+  run(`fluidsynth -qi /usr/share/soundfonts/freepats-general-midi.sf2 $(file)`)
+end    
+
+function create_midi(llvm::AbstractString)
+    codes = get_instruction_codes(llvm)
+    notes  = map(enumerate(codes)) do (i, code)
+        ΔT = 50
+        pitch = Int64(hash(code) % 128)
+        velocity = 100
+        Note(pitch, velocity, ΔT * (i -1), ΔT)
+        end
+    track = MIDITrack()
+    addnotes!(track, notes)
+    track
+end
+
+function play_midi(fn, types)
+    llvm = get_llvm_string(fn, types)
+    @show midi_track = create_midi(llvm)
+    midi_file = MIDIFile()
+    push!(midi_file.tracks, midi_track)
+    @show path  = first(mktemp()) * ".mid"
+    MIDI.save(path, midi_file)
+    play_synth(path)
 end
 
 function play_code(fn, types)

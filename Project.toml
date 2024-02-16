@@ -5,6 +5,7 @@ version = "1.0.0-DEV"
 
 [deps]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+MIDI = "f57c4921-e30c-5f49-b073-3f2f2ada663e"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 
 [compat]
