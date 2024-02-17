@@ -8,6 +8,8 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
+Troubadour will look at the LLVM IR of your code and turn it into a beautiful melody.
+
 ## Installation
 
 This package is unregistered so you will need to install it via
