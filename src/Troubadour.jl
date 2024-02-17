@@ -3,6 +3,8 @@ using ProgressMeter
 using Suppressor
 using InteractiveUtils
 using MIDI
+
+using LAME_jll: lame
 using Pkg.Artifacts
 
 export play_code, @llvm_play, play_midi, @llvm_midi

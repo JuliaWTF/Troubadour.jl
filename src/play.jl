@@ -12,7 +12,9 @@ function record_synth(file::AbstractString, ex::AbstractString)
     wavfile = string(ex) * ".wav"
     err = @capture_err begin
         run(`fluidsynth -F $(wavfile) -qi $(soundfont) $(file)`, stdout, stderr)
-        run(`lame $(wavfile)`, stdout, stderr)
+        lame() do exe
+            run(`$(exe) $(wavfile)`, stdout, stderr)
+        end
     end
     if !isempty(err)
         @warn "Warning occurred during recording, you can find them in `record_synth.log`."
