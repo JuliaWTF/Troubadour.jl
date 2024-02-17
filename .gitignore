@@ -4,3 +4,6 @@
 Manifest.toml
 /docs/Manifest.toml
 /docs/build/
+*.mp3
+*.wav
+record_synth.log
