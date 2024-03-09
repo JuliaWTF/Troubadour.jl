@@ -22,3 +22,11 @@ function record_synth(file::AbstractString, ex::AbstractString)
     end
     return string(ex) * ".mp3"
 end
+
+function play_operation(code, duration, start_t::Real=0)
+    note_ = hash_and_project(code, 5) + 3
+    note = "C$(note_)"
+    !iszero(start_t) && sleep(start_t)
+    cmd = `play -qn synth $(duration) pluck $(note)`
+    return cmd
+end
