@@ -1,7 +1,12 @@
 
 "Play the given MIDI file using `fluidsynth`"
-function play_synth(file::AbstractString)
-    return run(pipeline(`fluidsynth -qi  $(soundfont) $(file)`; stderr=devnull); wait=false)
+function play_synth(file::AbstractString, midi_log=first(splitext(file)) * ".log")
+    open(midi_log, "w") do io
+        run(pipeline(`fluidsynth -qi  $(soundfont) $(file)`; stderr=io); wait=true)
+    end
+    if !iszero(filesize(midi_log))
+        @info "warning(s) happened while playing MIDI file. Logs can be found at $(midi_log)."
+    end
 end
 
 """

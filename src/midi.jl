@@ -39,13 +39,15 @@ macro llvm_midi(ex, kwargs...)
     args = Base.tail(Tuple(ex.args))
     return esc(
         quote
-            @async play_midi(
+            t = Threads.@spawn play_midi(
                 $(s_ex),
                 $(Core.eval(__module__, fn)),
                 $(typeof.(Core.eval.(Ref(__module__), args)));
                 record=$(record),
             )
-            $(ex)
+            ans = $(ex)
+            fetch(t)
+            ans
         end,
     )
 end
@@ -128,11 +130,13 @@ function play_midi(ex, fn, types; record::Bool=false)
     midi_track = create_midi(llvm)
     midi_file = MIDIFile()
     push!(midi_file.tracks, midi_track)
-    path = first(mktemp()) * ".mid"
-    MIDI.save(path, midi_file)
+    tmp_dir = mktempdir()
+    midi_path = joinpath(tmp_dir, string(ex) * ".mid")
+    midi_log = joinpath(tmp_dir, string(ex) * ".log")
+    MIDI.save(midi_path, midi_file)
     if record
-        @async record_synth(path, ex)
+        @async record_synth(midi_path, ex)
     end
-    play_synth(path)
+    play_synth(midi_path, midi_log)
     return nothing
 end
