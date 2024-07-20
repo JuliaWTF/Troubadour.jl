@@ -1,7 +1,7 @@
 
 "Play the given MIDI file using `fluidsynth`"
 function play_synth(file::AbstractString)
-    return run(`fluidsynth -qi $(soundfont) $(file)`)
+    return run(pipeline(`fluidsynth -qi  $(soundfont) $(file)`; stderr=devnull); wait=false)
 end
 
 """
