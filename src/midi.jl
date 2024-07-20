@@ -74,6 +74,8 @@ function tone_to_pitch(x::Pitch)
     return string(x.class, x.octave)
 end
 
+const drum_codes = [108, 114, 115, 116, 117, 118]
+
 """
 Create a `MIDITrack` from LLVM code (as a string).
 """
@@ -83,7 +85,7 @@ function create_midi(llvm::AbstractString)
     ΔT = 250
     velocity = 100
     track = MIDITrack()
-    instrument = 0
+    instrument = 117
     change_instrument!(track, instrument)
     tonic = first(pitches)
 
@@ -96,7 +98,8 @@ function create_midi(llvm::AbstractString)
             tonic = generate_tonic(node_line[2:end])
         elseif first(node_line).type != Variable
             # If the line is not an assigment (%1 = ....) We play some drums!
-            change_instrument!(track, 119)
+            drum = hash_and_project(first(node_line), length(drum_codes), true)
+            change_instrument!(track, drum_codes[drum])
             for node in node_line
                 pitch = hash_and_project(node)
                 addnote!(track, Note(pitch, velocity, T, ΔT))
