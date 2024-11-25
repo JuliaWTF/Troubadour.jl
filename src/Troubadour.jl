@@ -33,7 +33,7 @@ macro llvm_play(ex)
     )
 end
 
-hash_and_project(x, max::Integer=MAX_BIT) = Int(rem(hash(x), max))
+hash_and_project(x, max::Integer=MAX_BIT, mod1::Bool=false) = Int(rem(hash(x), max) + mod1)
 
 function play_code(fn, types)
     llvm = get_llvm_string(fn, types)
