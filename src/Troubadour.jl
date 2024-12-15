@@ -3,20 +3,37 @@ using ProgressMeter
 using Suppressor
 using InteractiveUtils
 using MIDI
+using Distributions
+using Random
+using DataDeps
 
 using LAME_jll: lame
-using Pkg.Artifacts
 
-export play_code, @llvm_play, play_midi, @llvm_midi
-
-const soundfontpath = artifact"soundfont"
-const soundfont = joinpath(soundfontpath, "8MBGMSFX.sf2")
+export play_code, play_midi
+export @llvm_play, @llvm_midi
 
 include("llvm.jl")
 include("play.jl")
 include("midi.jl")
 
 const MAX_BIT = 128
+
+function __init__()
+    # Download the main soundfont for playing the midi files.
+    return register(
+        DataDep(
+            "Creative Soundfont",
+            "The soundfont file is used to convert the midi track into a real audio experience",
+            "https://ia803001.us.archive.org/5/items/free-soundfonts-sf2-2019-04/Creative%20%28emu10k1%298MBGMSFX.SF2",
+            "6c2ff6e9219989e0a2d39e633cbdc7d8f8a575903985160495aeab5d01cc48e6",
+        ),
+    )
+    datadep"Creative Soundfont"
+end
+
+function soundfont_path()
+    return joinpath(datadep"Creative Soundfont", "Creative%20%28emu10k1%298MBGMSFX.SF2")
+end
 
 "Plays the LLVM of an expression with Cs"
 macro llvm_play(ex)
@@ -33,7 +50,7 @@ macro llvm_play(ex)
     )
 end
 
-hash_and_project(x, max::Integer=MAX_BIT) = Int(rem(hash(x), max))
+hash_and_project(x, max::Integer=MAX_BIT, mod1::Bool=false) = Int(rem(hash(x), max) + mod1)
 
 function play_code(fn, types)
     llvm = get_llvm_string(fn, types)

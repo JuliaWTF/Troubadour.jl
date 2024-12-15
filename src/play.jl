@@ -1,7 +1,12 @@
 
 "Play the given MIDI file using `fluidsynth`"
-function play_synth(file::AbstractString)
-    return run(`fluidsynth -qi $(soundfont) $(file)`)
+function play_synth(file::AbstractString, midi_log=first(splitext(file)) * ".log")
+    open(midi_log, "w") do io
+        run(pipeline(`fluidsynth -qi  $(soundfont_path()) $(file)`; stderr=io); wait=true)
+    end
+    if !iszero(filesize(midi_log))
+        @info "warning(s) happened while playing MIDI file. Logs can be found at $(midi_log)."
+    end
 end
 
 """
@@ -11,7 +16,7 @@ Fluisynth (MIDI -> WAV) and Lame (WAV -> MP3).
 function record_synth(file::AbstractString, ex::AbstractString)
     wavfile = string(ex) * ".wav"
     err = @capture_err begin
-        run(`fluidsynth -F $(wavfile) -qi $(soundfont) $(file)`, stdout, stderr)
+        run(`fluidsynth -F $(wavfile) -qi $(soundfont_path()) $(file)`, stdout, stderr)
         lame() do exe
             run(`$(exe) $(wavfile)`, stdout, stderr)
         end
