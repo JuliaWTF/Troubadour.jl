@@ -9,7 +9,8 @@ using DataDeps
 
 using LAME_jll: lame
 
-export play_code, @llvm_play, play_midi, @llvm_midi
+export play_code, play_midi
+export @llvm_play, @llvm_midi
 
 include("llvm.jl")
 include("play.jl")
@@ -18,6 +19,7 @@ include("midi.jl")
 const MAX_BIT = 128
 
 function __init__()
+    # Download the main soundfont for playing the midi files.
     return register(
         DataDep(
             "Creative Soundfont",
