@@ -110,7 +110,7 @@ function create_midi(
     n_tracks::Integer=4,
 )
     @assert n_tracks > 0
-    nodes_lines = parse_llvm(llvm)
+    nodes_lines = filter(!isempty, parse_llvm(llvm))
     Ts = zeros(n_tracks)
     ΔT = 250
     velocity = 100
