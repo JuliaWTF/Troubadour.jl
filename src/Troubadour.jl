@@ -8,7 +8,6 @@ using Random
 using DataDeps
 
 using LAME_jll: lame
-using Pkg.Artifacts
 
 export play_code, @llvm_play, play_midi, @llvm_midi
 
