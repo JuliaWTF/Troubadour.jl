@@ -20,7 +20,7 @@ jobs:
       - name: Install fluidsynth
         run: |
           sudo apt-get update
-          sudo apt-get install fluidsynth
+          sudo apt-get install fluidsynth gzip
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
