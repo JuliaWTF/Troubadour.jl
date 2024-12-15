@@ -69,6 +69,12 @@ function choose_scale(x)
     return scales[hash_and_project(x, length(scales), true)]
 end
 
+function choose_track(x, n_tracks)
+    n_tracks <= 2 && return 1
+    n_available_tracks = n_tracks - 1
+    return collect(1:n_available_tracks)[hash_and_project(x, n_available_tracks, true)]
+end
+
 function generate_pitch(scale, current_pitch, x)
     # We remove one octave to the current pitch.
     min_pitch = Pitch(PitchClass(current_pitch), octave(current_pitch) - 1)
@@ -96,18 +102,23 @@ end
 const drum_codes = [108, 114, 115, 116, 117, 118]
 
 """
-Create a `MIDITrack` from LLVM code (as a string).
+Create a collection of `MIDITrack`s from LLVM code (as a string).
 """
 function create_midi(
-    llvm::AbstractString; forced_instrument::Union{Nothing,Integer}=nothing
+    llvm::AbstractString;
+    forced_instrument::Union{Nothing,Integer}=nothing,
+    n_tracks::Integer=5,
 )
+    @assert n_tracks > 0
     nodes_lines = parse_llvm(llvm)
-    T = 0
+    Ts = zeros(n_tracks)
     ΔT = 250
     velocity = 100
-    track = MIDITrack()
+    tracks = [MIDITrack() for _ in 1:n_tracks]
     instrument = something(forced_instrument, 117)
-    change_instrument!(track, instrument)
+    for track in tracks
+        change_instrument!(track, instrument)
+    end
     tonic = first(pitches)
     current_pitch = tonic
 
@@ -116,41 +127,50 @@ function create_midi(
         if first(node_line).val == "define"
             # Define is the first line of the LLVM code and determines the tonic used as well as the instrument.
             instrument = hash_and_project(node_line[2:end])
-            change_instrument!(track, something(forced_instrument, instrument))
+            for track in tracks
+                change_instrument!(track, something(forced_instrument, instrument))
+            end
             tonic = generate_tonic(node_line[2:end])
         elseif first(node_line).type != Variable
             # If the line is not an assigment (%1 = ....) We play some drums!
             drum = hash_and_project(first(node_line), length(drum_codes), true)
-            change_instrument!(track, something(forced_instrument, drum_codes[drum]))
-            for node in node_line
-                pitch = hash_and_project(node)
-                addnote!(track, Note(pitch, velocity, T, ΔT))
-                T += ΔT
+            let track = last(tracks)
+                change_instrument!(track, something(forced_instrument, drum_codes[drum]))
+                for node in node_line
+                    pitch = hash_and_project(node)
+                    addnote!(track, Note(pitch, velocity, Ts[end], ΔT))
+                    Ts[end] += ΔT
+                end
+                change_instrument!(track, instrument)
             end
-            change_instrument!(track, instrument)
         else
-            scale = choose_scale(node_line[1])
+            t_id = choose_track(node_line, n_tracks)
+            scale = choose_scale(first(node_line))
             for node in node_line[2:end]
                 if node.type == Instruction
                     instrument = hash_and_project(node)
-                    change_instrument!(track, something(forced_instrument, instrument))
+                    change_instrument!(
+                        tracks[t_id], something(forced_instrument, instrument)
+                    )
                 else
                     pitch = generate_pitch(scale, current_pitch, node)
-                    addnote!(track, Note(pitch; velocity, position=T, duration=ΔT))
-                    T += ΔT
+                    addnote!(
+                        tracks[t_id], Note(pitch; velocity, position=Ts[t_id], duration=ΔT)
+                    )
+                    Ts[t_id] += ΔT
                 end
             end
         end
     end
-    return track
+    return tracks
 end
 
 "Wrapping function that takes an expression, turn it into llvm, maps it to a MIDI track, save it as a file and play it via `fluidsynth`."
 function play_midi(ex, fn, types; record::Bool=false)
     llvm = get_llvm_string(fn, types)
-    midi_track = create_midi(llvm)
+    midi_tracks = create_midi(llvm)
     midi_file = MIDIFile()
-    push!(midi_file.tracks, midi_track)
+    append!(midi_file.tracks, midi_tracks)
     tmp_dir = mktempdir()
     midi_path = joinpath(tmp_dir, string(ex) * ".mid")
     midi_log = joinpath(tmp_dir, string(ex) * ".log")
