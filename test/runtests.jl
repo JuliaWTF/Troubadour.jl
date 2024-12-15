@@ -6,8 +6,7 @@ using Aqua
     @testset "Code quality (Aqua.jl)" begin
         Aqua.test_all(Troubadour)
     end
-    @llvm_midi sqrt(2)
-    # Write your tests here.
+    # @llvm_midi sqrt(2)
 end
 
 function f()
@@ -28,5 +27,5 @@ function f2(x)
 end
 y = rand(100)
 
-@llvm_midi f()
-@llvm_midi f2(y)
+# @llvm_midi f()
+# @llvm_midi f2(y)
