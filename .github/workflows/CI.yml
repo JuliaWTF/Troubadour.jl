@@ -35,7 +35,7 @@ jobs:
       - name: Install fluidsynth
         run: |
           sudo apt-get update
-          sudo apt-get install fluidsynth gzip
+          sudo apt-get install fluidsynth
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
