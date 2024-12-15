@@ -6,7 +6,7 @@ using Aqua
     @testset "Code quality (Aqua.jl)" begin
         Aqua.test_all(Troubadour)
     end
-    @play_midi sqrt(2)
+    @llvm_midi sqrt(2)
     # Write your tests here.
 end
 
