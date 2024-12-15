@@ -29,3 +29,8 @@ y = rand(100)
 
 # @llvm_midi f()
 # @llvm_midi f2(y)
+
+function fibonacci(n)
+    n <= 1 && return 1
+    return fibonacci(n - 1) + fibonacci(n - 2)
+end
