@@ -3,6 +3,8 @@ using ProgressMeter
 using Suppressor
 using InteractiveUtils
 using MIDI
+using Distributions
+using Random
 
 using LAME_jll: lame
 using Pkg.Artifacts

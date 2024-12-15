@@ -1,5 +1,6 @@
 
-using MusicTheory: Pitch, C, C♯, D, D♯, E, F, F♯, G, G♯, A, A♯, B, Minor, Major
+using MusicTheory:
+    Pitch, PitchClass, C, C♯, D, D♯, E, F, F♯, G, G♯, A, A♯, B, Minor, Major, octave
 using MusicTheory: Scale, major_scale, melodic_minor_scale, natural_minor_scale
 using MusicTheory: Interval, Major_3rd, Minor_2nd
 const Minor_3rd = Interval(3, Minor)
@@ -62,14 +63,28 @@ function generate_tonic(x)
     return pitches[hash_and_project(x, length(pitches), true)]
 end
 
-function generate_scale(tonic, x)
-    return Scale(tonic, scales[hash_and_project(x, length(scales), true)])
+function choose_scale(x)
+    return scales[hash_and_project(x, length(scales), true)]
 end
 
-function generate_pitch(scale, x)
-    v = hash_and_project(x, 5, true)
-    music_theory_pitch = collect(Iterators.take(scale, v))[v]
-    return tone_to_pitch(music_theory_pitch)
+function generate_pitch(scale, current_pitch, x)
+    # We remove one octave to the current pitch.
+    min_pitch = Pitch(PitchClass(current_pitch), octave(current_pitch) - 1)
+    # min_pitch = current_pitch - Interval(8, Perfect)
+    scale1 = Scale(min_pitch, scale)
+    scale2 = Scale(current_pitch, scale)
+    Random.seed!(hash(x))
+    n = length(scale) * 2
+    Δ = rand(Binomial(n, 0.5))
+    # new_pitch = current_pitch + Δp
+    new_pitch = if Δ <= n
+        collect(Iterators.take(scale1, Δ))[Δ]
+    else
+        n2 = Δ - n
+        collect(Iterators.take(scale2, n2))[n2]
+    end
+    # music_theory_pitch = collect(Iterators.take(scale, new_pitch))[new_pitch]
+    return tone_to_pitch(new_pitch)
 end
 
 function tone_to_pitch(x::Pitch)
@@ -92,6 +107,7 @@ function create_midi(
     instrument = something(forced_instrument, 117)
     change_instrument!(track, instrument)
     tonic = first(pitches)
+    current_pitch = tonic
 
     for node_line in nodes_lines
         isempty(node_line) && continue
@@ -111,13 +127,13 @@ function create_midi(
             end
             change_instrument!(track, instrument)
         else
-            scale = generate_scale(tonic, node_line[1])
+            scale = choose_scale(node_line[1])
             for node in node_line[2:end]
                 if node.type == Instruction
                     instrument = hash_and_project(node)
                     change_instrument!(track, something(forced_instrument, instrument))
                 else
-                    pitch = generate_pitch(scale, node)
+                    pitch = generate_pitch(scale, current_pitch, node)
                     addnote!(track, Note(pitch; velocity, position=T, duration=ΔT))
                     T += ΔT
                 end
