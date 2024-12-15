@@ -4,6 +4,7 @@ authors = ["JuliaWTF"]
 version = "1.0.0-DEV"
 
 [deps]
+DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 LAME_jll = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
