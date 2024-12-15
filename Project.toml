@@ -4,12 +4,14 @@ authors = ["JuliaWTF"]
 version = "1.0.0-DEV"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 LAME_jll = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 MIDI = "f57c4921-e30c-5f49-b073-3f2f2ada663e"
 MusicTheory = "564e61e1-4667-41b2-a4a2-754a0240c775"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 
 [compat]
