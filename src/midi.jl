@@ -107,7 +107,7 @@ Create a collection of `MIDITrack`s from LLVM code (as a string).
 function create_midi(
     llvm::AbstractString;
     forced_instrument::Union{Nothing,Integer}=nothing,
-    n_tracks::Integer=5,
+    n_tracks::Integer=4,
 )
     @assert n_tracks > 0
     nodes_lines = parse_llvm(llvm)
