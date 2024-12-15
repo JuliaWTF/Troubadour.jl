@@ -59,10 +59,12 @@ function change_instrument!(track::MIDITrack, instrument::Integer=0, channel::In
     )
 end
 
+"Pick a tonic out of a collection of pitches, based on the hash of `x`."
 function generate_tonic(x)
     return pitches[hash_and_project(x, length(pitches), true)]
 end
 
+"Pick a scale out of a collection, based on the hash of `x`."
 function choose_scale(x)
     return scales[hash_and_project(x, length(scales), true)]
 end
@@ -70,27 +72,27 @@ end
 function generate_pitch(scale, current_pitch, x)
     # We remove one octave to the current pitch.
     min_pitch = Pitch(PitchClass(current_pitch), octave(current_pitch) - 1)
-    # min_pitch = current_pitch - Interval(8, Perfect)
     scale1 = Scale(min_pitch, scale)
     scale2 = Scale(current_pitch, scale)
     Random.seed!(hash(x))
     n = length(scale) * 2
     Δ = rand(Binomial(n, 0.5))
-    # new_pitch = current_pitch + Δp
+    # We work around the fact that we cannot remove an interval by having two scales on two octaves.
     new_pitch = if Δ <= n
         collect(Iterators.take(scale1, Δ))[Δ]
     else
         n2 = Δ - n
         collect(Iterators.take(scale2, n2))[n2]
     end
-    # music_theory_pitch = collect(Iterators.take(scale, new_pitch))[new_pitch]
     return tone_to_pitch(new_pitch)
 end
 
+"Convert a MusicTheory.jl pitch to a string to be fed to MIDI.jl."
 function tone_to_pitch(x::Pitch)
     return string(x.class, x.octave)
 end
 
+"Drum codes associated withe soundfont in `soundfont_path()`."
 const drum_codes = [108, 114, 115, 116, 117, 118]
 
 """
@@ -111,8 +113,8 @@ function create_midi(
 
     for node_line in nodes_lines
         isempty(node_line) && continue
-        # Play some drums
         if first(node_line).val == "define"
+            # Define is the first line of the LLVM code and determines the tonic used as well as the instrument.
             instrument = hash_and_project(node_line[2:end])
             change_instrument!(track, something(forced_instrument, instrument))
             tonic = generate_tonic(node_line[2:end])
@@ -143,6 +145,7 @@ function create_midi(
     return track
 end
 
+"Wrapping function that takes an expression, turn it into llvm, maps it to a MIDI track, save it as a file and play it via `fluidsynth`."
 function play_midi(ex, fn, types; record::Bool=false)
     llvm = get_llvm_string(fn, types)
     midi_track = create_midi(llvm)
