@@ -12,6 +12,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check ou repository code
+        uses: actions/checkout@v4
+      - name: Install fluidsynth
+        run: |
+          sudo apt-get update
+          sudo apt-get install fluidsynth
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
