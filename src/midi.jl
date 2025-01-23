@@ -1,16 +1,17 @@
 
-using MusicTheory:
-    Pitch, PitchClass, C, C♯, D, D♯, E, F, F♯, G, G♯, A, A♯, B, Minor, Major, octave
-using MusicTheory: Scale, major_scale, melodic_minor_scale, natural_minor_scale
-using MusicTheory: Interval, Major_3rd, Minor_2nd
-const Minor_3rd = Interval(3, Minor)
+using Pitches
 
-const major_7 = [Major_3rd, Minor_3rd, Major_3rd, Minor_2nd]
+const SpelledPitch = Pitch{SpelledInterval}
 
-const scales = [major_scale, melodic_minor_scale, natural_minor_scale, major_7]
+const major_scale_class = cumsum([
+    i"P1:0", i"M2:0", i"M2:0", i"m2:0", i"M2:0", i"M2:0", i"M2:0"
+])
+const a_cool_scale = cumsum([i"P1:0", i"m2:0", i"m2:0", i"M2:0", i"M2:0", i"M2:0", i"M2:0"])
 
-const pitches = [
-    C[3], C♯[3], D[3], D♯[3], E[3], F[3], F♯[3], G[3], G♯[3], A[3], A♯[3], B[3]
+const scale_classes = [a_cool_scale]#, melodic_minor_scale, natural_minor_scale, major_7]
+
+const base_pitches = [
+    p"C4", p"C#4", p"D3", p"D♯4", p"E4", p"F4", p"F♯4", p"G4", p"G♯4", p"A4", p"A♯4", p"B4"
 ]
 
 """
@@ -61,40 +62,40 @@ end
 
 "Pick a tonic out of a collection of pitches, based on the hash of `x`."
 function generate_tonic(x)
-    return pitches[hash_and_project(x, length(pitches), true)]
+    return base_pitches[hash_and_project(x, length(base_pitches), true)]
 end
 
 "Pick a scale out of a collection, based on the hash of `x`."
-function choose_scale(x)
-    return scales[hash_and_project(x, length(scales), true)]
+function choose_scale(x, scale, scale_degree)
+    new_scale = scale_classes[hash_and_project(x, length(scale_classes), true)]
+    # TODO Update the scale degree gracefully
+    new_scale_degree = scale_degree
+    return new_scale, new_scale_degree
 end
+
+midi_semitones(scale) = map(x -> tomidi(x).interval, scale)
 
 function choose_track(x, n_tracks)
     n_tracks <= 2 && return 1
     n_available_tracks = n_tracks - 1
     return collect(1:n_available_tracks)[hash_and_project(x, n_available_tracks, true)]
 end
-
-function generate_pitch(scale, current_pitch, x)
-    # We remove one octave to the current pitch.
-    min_pitch = Pitch(PitchClass(current_pitch), octave(current_pitch) - 1)
-    scale1 = Scale(min_pitch, scale)
-    scale2 = Scale(current_pitch, scale)
+function generate_scale_degree(scale_class_length::Int, current_scale_degree::Int, x)::Int
     Random.seed!(hash(x))
-    n = length(scale) * 2
-    Δ = rand(Binomial(n, 0.5))
-    # We work around the fact that we cannot remove an interval by having two scales on two octaves.
-    new_pitch = if Δ <= n
-        collect(Iterators.take(scale1, Δ))[Δ]
-    else
-        n2 = Δ - n
-        collect(Iterators.take(scale2, n2))[n2]
-    end
-    return tone_to_pitch(new_pitch)
+    Δ = rand(Binomial(2 * scale_class_length, 0.5)) - scale_class_length
+    return current_scale_degree + Δ
+end
+
+function midipitch(
+    scale_class::Vector{SpelledInterval}, tonic::SpelledPitch, scale_degree::Int
+)
+    n = length(scale_class)
+    oct, idx = divrem(scale_degree, n)
+    return tomidi(embed(pc(tonic), 0)) + tomidi(scale_class[idx + 1]) + 12 * midi(oct)
 end
 
 "Convert a MusicTheory.jl pitch to a string to be fed to MIDI.jl."
-function tone_to_pitch(x::Pitch)
+function pitch_to_midi(x::Pitch)
     return string(x.class, x.octave)
 end
 
@@ -119,8 +120,9 @@ function create_midi(
     for track in tracks
         change_instrument!(track, instrument)
     end
-    tonic = first(pitches)
-    current_pitch = tonic
+    tonic = first(base_pitches)
+    scale = first(scale_classes)
+    scale_degree = length(scale) * (div(tomidi(tonic).pitch.interval, 12) - 1)
 
     for node_line in nodes_lines
         isempty(node_line) && continue
@@ -131,6 +133,7 @@ function create_midi(
                 change_instrument!(track, something(forced_instrument, instrument))
             end
             tonic = generate_tonic(node_line[2:end])
+            scale_degree = length(scale) * (div(tomidi(tonic).pitch.interval, 12) - 1)
         elseif first(node_line).type != Variable
             # If the line is not an assigment (%1 = ....) We play some drums!
             drum = hash_and_project(first(node_line), length(drum_codes), true)
@@ -145,7 +148,7 @@ function create_midi(
             end
         else
             t_id = choose_track(node_line, n_tracks)
-            scale = choose_scale(first(node_line))
+            scale, scale_degree = choose_scale(node_line[1], scale, scale_degree) # the length of the scale might change
             for node in node_line[2:end]
                 if node.type == Instruction
                     instrument = hash_and_project(node)
@@ -153,9 +156,11 @@ function create_midi(
                         tracks[t_id], something(forced_instrument, instrument)
                     )
                 else
-                    pitch = generate_pitch(scale, current_pitch, node)
+                    scale_degree = generate_scale_degree(length(scale), scale_degree, node)
+                    current_pitch = midipitch(scale, tonic, scale_degree)
                     addnote!(
-                        tracks[t_id], Note(pitch; velocity, position=Ts[t_id], duration=ΔT)
+                        tracks[t_id],
+                        Note(current_pitch.pitch.interval, Ts[t_id]; velocity, duration=ΔT),
                     )
                     Ts[t_id] += ΔT
                 end
