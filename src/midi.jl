@@ -160,7 +160,7 @@ function create_midi(
                     current_pitch = midipitch(scale, tonic, scale_degree)
                     addnote!(
                         tracks[t_id],
-                        Note(current_pitch.pitch.interval, T; velocity, duration=ΔT),
+                        Note(current_pitch.pitch.interval, Ts[t_id]; velocity, duration=ΔT),
                     )
                     Ts[t_id] += ΔT
                 end
