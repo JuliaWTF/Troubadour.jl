@@ -1,7 +1,7 @@
 name = "Troubadour"
 uuid = "4da8f720-f50b-4b59-95d9-7b314520e0f4"
-authors = ["JuliaWTF"]
 version = "1.0.0-DEV"
+authors = ["JuliaWTF"]
 
 [deps]
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
@@ -22,6 +22,7 @@ InteractiveUtils = "1"
 LAME_jll = "3"
 MIDI = "2"
 MusicTheory = "0.1"
+Pitches = "0.1"
 ProgressMeter = "1"
 Random = "1"
 Suppressor = "0.2"
